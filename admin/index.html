@@ -14,7 +14,7 @@
     margin: 0; background: var(--bg); color: var(--ink);
     font-family: -apple-system, "Public Sans", sans-serif; line-height: 1.5;
   }
-  .wrap { max-width: 900px; margin: 0 auto; padding: 32px 20px 80px; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 32px 20px 80px; }
   h1 { font-size: 1.5rem; margin: 0 0 4px; }
   .sub { color: #666; font-size: 14px; margin: 0 0 28px; }
   .card { background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 24px; margin-bottom: 20px; }
@@ -76,6 +76,34 @@
   #editor { display: none; }
   a.linklike { color: var(--rust); cursor: pointer; text-decoration: underline; font-size: 14px; }
   .top-actions { display: flex; justify-content: space-between; align-items: center; }
+  .top-actions .buttons { display: flex; gap: 8px; }
+  .admin-shell { display: flex; align-items: flex-start; gap: 20px; }
+  .sidebar {
+    width: 280px; flex-shrink: 0; background: var(--paper); border: 1px solid var(--line);
+    border-radius: 8px; padding: 16px; overflow: hidden;
+    transition: width 0.15s ease, padding 0.15s ease, opacity 0.15s ease, margin 0.15s ease;
+  }
+  .sidebar.collapsed { width: 0; padding: 0; border: none; opacity: 0; margin-right: -20px; pointer-events: none; }
+  .sidebar #search { margin-bottom: 8px; }
+  .sidebar > button { width: 100%; margin-top: 0; margin-bottom: 14px; }
+  .main-content { flex: 1; min-width: 0; }
+  .post-tree { font-size: 14px; }
+  .post-tree details { margin-bottom: 2px; }
+  .post-tree summary {
+    cursor: pointer; padding: 6px 4px; border-radius: 4px; user-select: none;
+  }
+  .post-tree summary:hover { background: rgba(166,73,31,0.08); }
+  .tree-year > summary { font-weight: 700; }
+  .tree-month > summary { font-size: 13px; color: #6b6350; margin-left: 8px; }
+  .tree-posts { margin-left: 24px; }
+  .tree-post {
+    display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    padding: 6px 8px; border-radius: 4px; cursor: pointer; font-size: 13px;
+  }
+  .tree-post:hover { background: rgba(166,73,31,0.08); }
+  .tree-post.active { background: var(--rust); color: #fff; }
+  .tree-post.active .badge.draft { background: #fff; color: var(--rust); }
+  .tree-post-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -96,54 +124,63 @@
         <h1>Shop Notes Admin</h1>
         <p class="sub">Write, edit, and publish posts for blog.primochops.com</p>
       </div>
-      <button class="secondary" onclick="logout()">Log out</button>
+      <div class="buttons">
+        <button class="secondary" onclick="toggleSidebar()">☰ Posts</button>
+        <button class="secondary" onclick="logout()">Log out</button>
+      </div>
     </div>
 
-    <div id="list-view">
-      <div class="toolbar">
+    <div class="admin-shell">
+      <aside class="sidebar" id="sidebar">
         <input type="text" id="search" placeholder="Search posts…" oninput="loadPosts()">
         <button onclick="newPost()">+ New post</button>
-      </div>
-      <div class="card" id="post-list"></div>
-    </div>
+        <div id="post-tree" class="post-tree"></div>
+      </aside>
 
-    <div id="editor" class="card">
-      <h2 id="editor-heading">New post</h2>
-      <label>Title</label>
-      <input type="text" id="f-title" oninput="autoSlug()">
-      <div class="row">
-        <div>
-          <label>Slug (URL)</label>
-          <input type="text" id="f-slug">
+      <div class="main-content">
+        <div id="empty-state" class="card">
+          <p class="sub" style="margin:0;">Select a post from the list on the left, or create a new one.</p>
         </div>
-        <div>
-          <label>Category</label>
-          <input type="text" id="f-category" placeholder="Exhaust, Fabrication, Brakes…">
+
+        <div id="editor" class="card" style="display:none;">
+          <h2 id="editor-heading">New post</h2>
+          <label>Title</label>
+          <input type="text" id="f-title" oninput="autoSlug()">
+          <div class="row">
+            <div>
+              <label>Slug (URL)</label>
+              <input type="text" id="f-slug">
+            </div>
+            <div>
+              <label>Category</label>
+              <input type="text" id="f-category" placeholder="Exhaust, Fabrication, Brakes…">
+            </div>
+          </div>
+          <label>Excerpt (shown in the post list &amp; search snippets)</label>
+          <textarea id="f-excerpt" style="min-height:70px;"></textarea>
+          <label>Body</label>
+          <div class="editor-toolbar">
+            <button type="button" onmousedown="event.preventDefault()" onclick="fmt('formatBlock','P')" title="Paragraph">¶</button>
+            <button type="button" onmousedown="event.preventDefault()" onclick="fmt('formatBlock','H2')" title="Heading"><b>H2</b></button>
+            <button type="button" onmousedown="event.preventDefault()" onclick="fmt('bold')" title="Bold"><b>B</b></button>
+            <button type="button" onmousedown="event.preventDefault()" onclick="fmt('insertUnorderedList')" title="Bullet list">&bull; List</button>
+            <button type="button" onmousedown="event.preventDefault()" onclick="insertLink()" title="Link">Link</button>
+            <button type="button" onmousedown="event.preventDefault()" onclick="insertShopNote()" title="Insert shop-note callout box">+ Shop Note</button>
+            <span class="spacer"></span>
+            <button type="button" onclick="toggleHtmlView()" id="html-toggle-btn" title="Switch to raw HTML">HTML</button>
+          </div>
+          <div id="f-body-visual" class="editor-visual" contenteditable="true"></div>
+          <textarea id="f-body" style="display:none;"></textarea>
+          <p class="sub" style="margin-top:6px;">Use the toolbar for normal writing. Switch to HTML if you need something the toolbar doesn't cover.</p>
+          <label><input type="checkbox" id="f-published" checked style="width:auto;display:inline;vertical-align:middle;"> Published (uncheck to save as a draft)</label>
+          <div>
+            <button onclick="savePost()">Save post</button>
+            <button class="secondary" onclick="closeEditor()">Cancel</button>
+            <button class="danger" id="delete-btn" style="display:none;" onclick="deletePost()">Delete</button>
+          </div>
+          <p class="msg" id="editor-msg"></p>
         </div>
       </div>
-      <label>Excerpt (shown in the post list &amp; search snippets)</label>
-      <textarea id="f-excerpt" style="min-height:70px;"></textarea>
-      <label>Body</label>
-      <div class="editor-toolbar">
-        <button type="button" onmousedown="event.preventDefault()" onclick="fmt('formatBlock','P')" title="Paragraph">¶</button>
-        <button type="button" onmousedown="event.preventDefault()" onclick="fmt('formatBlock','H2')" title="Heading"><b>H2</b></button>
-        <button type="button" onmousedown="event.preventDefault()" onclick="fmt('bold')" title="Bold"><b>B</b></button>
-        <button type="button" onmousedown="event.preventDefault()" onclick="fmt('insertUnorderedList')" title="Bullet list">&bull; List</button>
-        <button type="button" onmousedown="event.preventDefault()" onclick="insertLink()" title="Link">Link</button>
-        <button type="button" onmousedown="event.preventDefault()" onclick="insertShopNote()" title="Insert shop-note callout box">+ Shop Note</button>
-        <span class="spacer"></span>
-        <button type="button" onclick="toggleHtmlView()" id="html-toggle-btn" title="Switch to raw HTML">HTML</button>
-      </div>
-      <div id="f-body-visual" class="editor-visual" contenteditable="true"></div>
-      <textarea id="f-body" style="display:none;"></textarea>
-      <p class="sub" style="margin-top:6px;">Use the toolbar for normal writing. Switch to HTML if you need something the toolbar doesn't cover.</p>
-      <label><input type="checkbox" id="f-published" checked style="width:auto;display:inline;vertical-align:middle;"> Published (uncheck to save as a draft)</label>
-      <div>
-        <button onclick="savePost()">Save post</button>
-        <button class="secondary" onclick="closeEditor()">Cancel</button>
-        <button class="danger" id="delete-btn" style="display:none;" onclick="deletePost()">Delete</button>
-      </div>
-      <p class="msg" id="editor-msg"></p>
     </div>
   </div>
 
@@ -248,24 +285,63 @@ async function loadPosts() {
   const q = document.getElementById('search').value.trim();
   const url = '/api/posts?all=1' + (q ? '&q=' + encodeURIComponent(q) : '');
   const { posts } = await api(url);
-  const list = document.getElementById('post-list');
+  renderTree(posts);
+}
+
+function renderTree(posts) {
+  const tree = document.getElementById('post-tree');
+
   if (!posts.length) {
-    list.innerHTML = '<p class="sub">No posts found.</p>';
+    tree.innerHTML = '<p class="sub" style="margin-top:12px;">No posts found.</p>';
     return;
   }
-  list.innerHTML = posts.map(p => `
-    <div class="post-row">
-      <div>
-        <span class="title">${escapeHtml(p.title)}</span>
-        <span class="badge">${escapeHtml(p.category)}</span>
-        ${!p.published ? '<span class="badge draft">Draft</span>' : ''}
-        <div class="meta">${p.slug} · ${p.created_at}</div>
-      </div>
-      <div class="actions">
-        <button onclick="editPost('${p.slug}')">Edit</button>
-      </div>
-    </div>
-  `).join('');
+
+  const groups = {};
+  posts.forEach(p => {
+    const d = new Date(p.created_at.replace(' ', 'T') + 'Z');
+    const year = d.getFullYear();
+    const month = d.getMonth();
+    if (!groups[year]) groups[year] = {};
+    if (!groups[year][month]) groups[year][month] = [];
+    groups[year][month].push(p);
+  });
+
+  const years = Object.keys(groups).sort((a, b) => b - a);
+  let html = '';
+
+  years.forEach((year, yi) => {
+    const months = Object.keys(groups[year]).sort((a, b) => b - a);
+    html += '<details class="tree-year"' + (yi === 0 ? ' open' : '') + '><summary>' + year + '</summary>';
+
+    months.forEach((month, mi) => {
+      const monthName = new Date(2000, Number(month), 1).toLocaleString('en-US', { month: 'long' });
+      html += '<details class="tree-month"' + (yi === 0 && mi === 0 ? ' open' : '') + '><summary>' + monthName + '</summary><div class="tree-posts">';
+
+      groups[year][month].forEach(p => {
+        html += '<div class="tree-post" data-slug="' + escapeHtml(p.slug) + '" onclick="editPost(\'' + p.slug + '\')">'
+          + '<span class="tree-post-title">' + escapeHtml(p.title) + '</span>'
+          + (!p.published ? '<span class="badge draft">Draft</span>' : '')
+          + '</div>';
+      });
+
+      html += '</div></details>';
+    });
+
+    html += '</details>';
+  });
+
+  tree.innerHTML = html;
+  highlightActivePost();
+}
+
+function highlightActivePost() {
+  document.querySelectorAll('.tree-post').forEach(el => {
+    el.classList.toggle('active', el.getAttribute('data-slug') === editingSlug);
+  });
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('collapsed');
 }
 
 function escapeHtml(s) {
@@ -296,8 +372,9 @@ function newPost() {
   document.getElementById('f-published').checked = true;
   document.getElementById('delete-btn').style.display = 'none';
   document.getElementById('editor-msg').textContent = '';
+  document.getElementById('empty-state').style.display = 'none';
   document.getElementById('editor').style.display = 'block';
-  document.getElementById('list-view').style.display = 'none';
+  highlightActivePost();
 }
 
 async function editPost(slug) {
@@ -313,14 +390,16 @@ async function editPost(slug) {
   document.getElementById('f-published').checked = !!post.published;
   document.getElementById('delete-btn').style.display = 'inline-block';
   document.getElementById('editor-msg').textContent = '';
+  document.getElementById('empty-state').style.display = 'none';
   document.getElementById('editor').style.display = 'block';
-  document.getElementById('list-view').style.display = 'none';
+  highlightActivePost();
 }
 
 function closeEditor() {
   document.getElementById('editor').style.display = 'none';
-  document.getElementById('list-view').style.display = 'block';
+  document.getElementById('empty-state').style.display = 'block';
   editingSlug = null;
+  highlightActivePost();
 }
 
 async function savePost() {
