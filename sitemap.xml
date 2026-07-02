@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!--
+    NEW POST TEMPLATE — copy this <url> block for each new post,
+    edit loc and lastmod, then paste it above </urlset>.
+  -->
+
+  <url>
+    <loc>https://blog.primochops.com/</loc>
+  </url>
+  <url>
+    <loc>https://blog.primochops.com/posts/3-bolt-vs-single-bolt-exhaust-flange.html</loc>
+    <lastmod>2026-07-02</lastmod>
+  </url>
+
+</urlset>

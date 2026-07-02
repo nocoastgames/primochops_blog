@@ -1,0 +1,288 @@
+/* Fab Tabs Blog — shared stylesheet
+   Design language: shop travelers / inventory tags pinned to a pegboard.
+   Palette: asphalt, aged shop-ticket paper, oxide rust, weathered copper-green. */
+
+:root {
+  --asphalt: #201e1b;
+  --asphalt-2: #171512;
+  --paper: #e4dcc8;
+  --paper-2: #d8cfb6;
+  --rust: #a6491f;
+  --rust-bright: #c4592a;
+  --oxide: #4b5d45;
+  --chrome: #9a9a94;
+  --ink: #16130f;
+  --hairline: rgba(228, 220, 200, 0.14);
+}
+
+* { box-sizing: border-box; }
+
+html {
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--asphalt);
+  background-image:
+    radial-gradient(ellipse at top left, rgba(166, 73, 31, 0.07), transparent 60%),
+    repeating-linear-gradient(180deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 3px);
+  color: var(--chrome);
+  font-family: "Public Sans", -apple-system, sans-serif;
+  font-size: 17px;
+  line-height: 1.65;
+}
+
+a { color: var(--rust-bright); text-decoration: none; }
+a:hover { text-decoration: underline; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--rust-bright); outline-offset: 3px; }
+
+.wrap {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ---------- Header ---------- */
+
+.site-header {
+  padding: 56px 0 40px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.site-header .kicker {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--oxide);
+}
+
+.site-title {
+  font-family: "Oswald", sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-size: clamp(2.2rem, 6vw, 3.2rem);
+  color: var(--paper);
+  margin: 10px 0 6px;
+  line-height: 1;
+}
+
+.site-title a { color: inherit; }
+.site-title a:hover { text-decoration: none; color: var(--rust-bright); }
+
+.site-tagline {
+  color: var(--chrome);
+  font-size: 15px;
+  max-width: 46ch;
+}
+
+.site-nav {
+  margin-top: 22px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.site-nav a { color: var(--chrome); margin-right: 18px; }
+.site-nav a:hover { color: var(--rust-bright); }
+
+/* ---------- Post list (shop-tag cards) ---------- */
+
+.post-list {
+  list-style: none;
+  margin: 44px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.tag-card {
+  position: relative;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 26px 28px 24px 34px;
+  border-radius: 3px 10px 10px 3px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.28);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tag-card::before {
+  /* punched hole, like a real inventory tag */
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 26px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--asphalt);
+  box-shadow: inset 0 2px 3px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.tag-card::after {
+  /* string loop through the hole */
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  width: 26px;
+  height: 26px;
+  border: 2px solid var(--rust);
+  border-right-color: transparent;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  transform: rotate(-45deg);
+  opacity: 0.55;
+}
+
+.tag-card:hover { transform: translateX(3px); box-shadow: 0 10px 24px rgba(0,0,0,0.34); }
+
+.tag-card .meta {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--oxide);
+  margin-bottom: 8px;
+}
+
+.tag-card .meta .stamp {
+  display: inline-block;
+  border: 1px solid var(--rust);
+  color: var(--rust);
+  padding: 1px 7px;
+  border-radius: 2px;
+  margin-right: 8px;
+  transform: rotate(-2deg);
+}
+
+.tag-card h2 {
+  font-family: "Oswald", sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 1.4rem;
+  line-height: 1.15;
+  margin: 0 0 10px;
+}
+
+.tag-card h2 a { color: var(--ink); }
+.tag-card h2 a:hover { color: var(--rust); text-decoration: none; }
+
+.tag-card p { margin: 0; color: #3a352c; font-size: 15px; }
+
+.tag-card .read-more {
+  display: inline-block;
+  margin-top: 12px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ---------- Article page ---------- */
+
+article.post {
+  padding: 40px 0 80px;
+}
+
+.post-meta {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--oxide);
+  margin-bottom: 14px;
+}
+
+.post-meta .stamp {
+  display: inline-block;
+  border: 1px solid var(--rust);
+  color: var(--rust-bright);
+  padding: 1px 7px;
+  border-radius: 2px;
+  margin-right: 10px;
+}
+
+h1.post-title {
+  font-family: "Oswald", sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--paper);
+  font-size: clamp(1.9rem, 5vw, 2.6rem);
+  line-height: 1.1;
+  margin: 0 0 26px;
+  max-width: 22ch;
+}
+
+.post-body p { margin: 0 0 20px; }
+.post-body h2 {
+  font-family: "Oswald", sans-serif;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--paper);
+  font-size: 1.3rem;
+  margin: 40px 0 14px;
+  padding-top: 18px;
+  border-top: 1px solid var(--hairline);
+}
+.post-body ul, .post-body ol { margin: 0 0 20px; padding-left: 22px; }
+.post-body li { margin-bottom: 8px; }
+.post-body strong { color: var(--paper); }
+
+.post-body blockquote {
+  margin: 28px 0;
+  padding: 4px 0 4px 20px;
+  border-left: 3px solid var(--rust);
+  color: var(--paper);
+  font-style: italic;
+}
+
+.shop-note {
+  background: var(--paper);
+  color: var(--ink);
+  padding: 20px 24px;
+  border-radius: 3px 10px 10px 3px;
+  margin: 32px 0;
+  font-size: 15px;
+}
+.shop-note .label {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--rust);
+  display: block;
+  margin-bottom: 8px;
+}
+
+.back-link {
+  display: inline-block;
+  margin-top: 40px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ---------- Footer ---------- */
+
+.site-footer {
+  border-top: 1px solid var(--hairline);
+  padding: 30px 0 60px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  color: var(--oxide);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.site-footer a { color: var(--chrome); }
+
+@media (max-width: 480px) {
+  .tag-card { padding: 22px 20px 20px 30px; }
+}
