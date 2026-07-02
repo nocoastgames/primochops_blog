@@ -28,18 +28,26 @@ html {
 
 body {
   margin: 0;
-  background-color: var(--swirl-base);
-  background-image:
-    linear-gradient(rgba(248, 242, 226, 0.9), rgba(248, 242, 226, 0.9)),
-    url('/fabtabsbg.webp');
-  background-repeat: no-repeat, no-repeat;
-  background-size: cover, cover;
-  background-position: center, center;
-  background-attachment: fixed, fixed;
+  position: relative;
   color: var(--ink);
   font-family: "Public Sans", -apple-system, sans-serif;
   font-size: 17px;
   line-height: 1.65;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: -20px;
+  background-color: var(--swirl-base);
+  background-image:
+    linear-gradient(rgba(248, 242, 226, 0.7), rgba(248, 242, 226, 0.9)),
+    url('/fabtabsbg.webp');
+  background-repeat: no-repeat, no-repeat;
+  background-size: cover, cover;
+  background-position: center, center;
+  filter: blur(6px);
+  z-index: -1;
 }
 
 a { color: var(--rust-bright); text-decoration: none; }
