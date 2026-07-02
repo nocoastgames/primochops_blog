@@ -30,7 +30,7 @@ body {
   margin: 0;
   background-color: var(--swirl-base);
   background-image:
-    linear-gradient(rgba(248, 242, 226, 0.5), rgba(248, 242, 226, 0.3)),
+    linear-gradient(rgba(248, 242, 226, 0.5), rgba(248, 242, 226, 0.7)),
     url('/fabtabsbg.webp');
   background-repeat: no-repeat, no-repeat;
   background-size: cover, cover;
