@@ -1,17 +1,312 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+/* Fab Tabs Blog — shared stylesheet
+   Design language: shop travelers / inventory tags pinned to a pegboard.
+   Palette: asphalt, aged shop-ticket paper, oxide rust, weathered copper-green. */
 
-  <!--
-    NEW POST TEMPLATE — copy this <url> block for each new post,
-    edit loc and lastmod, then paste it above </urlset>.
-  -->
+:root {
+  --swirl-pink: #f3cdd6;
+  --swirl-teal: #d3e6d6;
+  --swirl-gold: #f0e2b8;
+  --swirl-blue: #cddced;
+  --swirl-base: #f8f2e2;
+  --paper: #fdfaf1;
+  --paper-2: #f4ecd8;
+  --rust: #a6491f;
+  --rust-bright: #c4592a;
+  --oxide: #6b6350;
+  --chrome: #55503f;
+  --ink: #16130f;
+  --line: #14110c;
+  --hairline: rgba(20, 17, 12, 0.12);
+}
 
-  <url>
-    <loc>https://blog.primochops.com/</loc>
-  </url>
-  <url>
-    <loc>https://blog.primochops.com/posts/3-bolt-vs-single-bolt-exhaust-flange.html</loc>
-    <lastmod>2026-07-02</lastmod>
-  </url>
+* { box-sizing: border-box; }
 
-</urlset>
+html {
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background-color: var(--swirl-base);
+  background-image:
+    radial-gradient(circle at 18% 24%, var(--swirl-pink) 0%, transparent 42%),
+    radial-gradient(circle at 82% 12%, var(--swirl-blue) 0%, transparent 40%),
+    radial-gradient(circle at 74% 78%, var(--swirl-teal) 0%, transparent 44%),
+    radial-gradient(circle at 16% 82%, var(--swirl-gold) 0%, transparent 42%),
+    radial-gradient(circle at 50% 48%, var(--swirl-pink) 0%, transparent 26%),
+    url('/swirl-lines.svg'),
+    linear-gradient(var(--swirl-base), var(--swirl-base));
+  background-size: 640px 640px, 640px 640px, 640px 640px, 640px 640px, 640px 640px, 220px 220px, auto;
+  background-repeat: repeat;
+  background-blend-mode: normal, normal, normal, normal, normal, multiply, normal;
+  color: var(--ink);
+  font-family: "Public Sans", -apple-system, sans-serif;
+  font-size: 17px;
+  line-height: 1.65;
+}
+
+a { color: var(--rust-bright); text-decoration: none; }
+a:hover { text-decoration: underline; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--rust-bright); outline-offset: 3px; }
+
+.wrap {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.wrap { padding-top: 32px; padding-bottom: 32px; }
+
+.site-header {
+  background: var(--paper);
+  border-radius: 4px 16px 16px 4px;
+  padding: 40px 36px 34px;
+  box-shadow: 0 10px 28px rgba(20, 17, 12, 0.28);
+  border-bottom: none;
+}
+
+.site-header .kicker {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--oxide);
+}
+
+.site-title {
+  font-family: "Oswald", sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-size: clamp(2.2rem, 6vw, 3.2rem);
+  color: var(--ink);
+  margin: 10px 0 6px;
+  line-height: 1;
+}
+
+.site-title a { color: inherit; }
+.site-title a:hover { text-decoration: none; color: var(--rust); }
+
+.site-tagline {
+  color: var(--chrome);
+  font-size: 15px;
+  max-width: 46ch;
+}
+
+.site-nav {
+  margin-top: 22px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.site-nav a { color: var(--rust); margin-right: 18px; }
+.site-nav a:hover { color: var(--ink); }
+
+/* ---------- Post list (shop-tag cards) ---------- */
+
+.post-list {
+  list-style: none;
+  margin: 44px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.tag-card {
+  position: relative;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 26px 28px 24px 34px;
+  border-radius: 3px 10px 10px 3px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.28);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tag-card::before {
+  /* punched hole, like a real inventory tag */
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 26px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--line);
+  box-shadow: inset 0 2px 3px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.tag-card::after {
+  /* string loop through the hole */
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  width: 26px;
+  height: 26px;
+  border: 2px solid var(--rust);
+  border-right-color: transparent;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  transform: rotate(-45deg);
+  opacity: 0.55;
+}
+
+.tag-card:hover { transform: translateX(3px); box-shadow: 0 10px 24px rgba(0,0,0,0.34); }
+
+.tag-card .meta {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--oxide);
+  margin-bottom: 8px;
+}
+
+.tag-card .meta .stamp {
+  display: inline-block;
+  border: 1px solid var(--rust);
+  color: var(--rust);
+  padding: 1px 7px;
+  border-radius: 2px;
+  margin-right: 8px;
+  transform: rotate(-2deg);
+}
+
+.tag-card h2 {
+  font-family: "Oswald", sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 1.4rem;
+  line-height: 1.15;
+  margin: 0 0 10px;
+}
+
+.tag-card h2 a { color: var(--ink); }
+.tag-card h2 a:hover { color: var(--rust); text-decoration: none; }
+
+.tag-card p { margin: 0; color: #3a352c; font-size: 15px; }
+
+.tag-card .read-more {
+  display: inline-block;
+  margin-top: 12px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ---------- Article page ---------- */
+
+article.post {
+  background: var(--paper);
+  border-radius: 4px 16px 16px 4px;
+  padding: 40px 36px 46px;
+  margin: 32px 0 40px;
+  box-shadow: 0 10px 28px rgba(20, 17, 12, 0.28);
+  color: var(--ink);
+}
+
+.post-meta {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--oxide);
+  margin-bottom: 14px;
+}
+
+.post-meta .stamp {
+  display: inline-block;
+  border: 1px solid var(--rust);
+  color: var(--rust);
+  padding: 1px 7px;
+  border-radius: 2px;
+  margin-right: 10px;
+}
+
+h1.post-title {
+  font-family: "Oswald", sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--ink);
+  font-size: clamp(1.9rem, 5vw, 2.6rem);
+  line-height: 1.1;
+  margin: 0 0 26px;
+  max-width: 22ch;
+}
+
+.post-body { color: #3a352c; }
+.post-body p { margin: 0 0 20px; }
+.post-body h2 {
+  font-family: "Oswald", sans-serif;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 1.3rem;
+  margin: 40px 0 14px;
+  padding-top: 18px;
+  border-top: 1px solid var(--hairline);
+}
+.post-body ul, .post-body ol { margin: 0 0 20px; padding-left: 22px; }
+.post-body li { margin-bottom: 8px; }
+.post-body strong { color: var(--ink); }
+
+.post-body blockquote {
+  margin: 28px 0;
+  padding: 4px 0 4px 20px;
+  border-left: 3px solid var(--rust);
+  color: var(--ink);
+  font-style: italic;
+}
+
+.shop-note {
+  background: var(--paper-2);
+  color: var(--ink);
+  padding: 20px 24px;
+  border-radius: 3px 10px 10px 3px;
+  margin: 32px 0;
+  font-size: 15px;
+}
+.shop-note .label {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--rust);
+  display: block;
+  margin-bottom: 8px;
+}
+
+.back-link {
+  display: inline-block;
+  margin-top: 12px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--rust);
+}
+
+/* ---------- Footer ---------- */
+
+.site-footer {
+  margin-top: 24px;
+  padding: 18px 24px;
+  background: rgba(242, 234, 216, 0.9);
+  border-radius: 4px 16px 16px 4px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  color: var(--ink);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.site-footer a { color: var(--rust); }
+
+@media (max-width: 480px) {
+  .tag-card { padding: 22px 20px 20px 30px; }
+}
