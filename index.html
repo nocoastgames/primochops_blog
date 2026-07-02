@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fab Tabs Shop Notes — Admin</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  :root {
+    --rust: #a6491f; --ink: #16130f; --paper: #fdfaf1; --line: #e2dbc9; --bg: #f4f1ea;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, "Public Sans", sans-serif; line-height: 1.5;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 32px 20px 80px; }
+  h1 { font-size: 1.5rem; margin: 0 0 4px; }
+  .sub { color: #666; font-size: 14px; margin: 0 0 28px; }
+  .card { background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 24px; margin-bottom: 20px; }
+  label { display: block; font-size: 13px; font-weight: 600; margin: 14px 0 4px; }
+  label:first-child { margin-top: 0; }
+  input[type=text], input[type=password], textarea, select {
+    width: 100%; padding: 9px 10px; border: 1px solid #ccc; border-radius: 5px;
+    font-family: inherit; font-size: 14px; background: #fff; color: var(--ink);
+  }
+  textarea { min-height: 240px; font-family: "SFMono-Regular", Consolas, monospace; font-size: 13px; }
+  .row { display: flex; gap: 16px; }
+  .row > div { flex: 1; }
+  button {
+    background: var(--rust); color: #fff; border: none; border-radius: 5px;
+    padding: 9px 18px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 16px;
+  }
+  button:hover { opacity: 0.9; }
+  button.secondary { background: #999; }
+  button.danger { background: #7a2a1a; }
+  .msg { font-size: 13px; margin-top: 10px; }
+  .msg.error { color: #a6231f; }
+  .msg.ok { color: #2a6b3a; }
+  .post-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid var(--line);
+  }
+  .post-row:last-child { border-bottom: none; }
+  .post-row .title { font-weight: 600; }
+  .post-row .meta { font-size: 12px; color: #777; }
+  .badge { font-size: 11px; padding: 2px 7px; border-radius: 3px; background: #eee; margin-left: 8px; }
+  .badge.draft { background: #f3e0c9; color: #7a4a10; }
+  .actions button { margin: 0 0 0 8px; padding: 6px 12px; font-size: 13px; }
+  .toolbar { display: flex; gap: 10px; margin-bottom: 16px; }
+  .toolbar input { flex: 1; }
+  #editor { display: none; }
+  a.linklike { color: var(--rust); cursor: pointer; text-decoration: underline; font-size: 14px; }
+  .top-actions { display: flex; justify-content: space-between; align-items: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div id="login-view" class="card" style="max-width:360px;">
+    <h1>Shop Notes Admin</h1>
+    <p class="sub">Log in to write and manage posts.</p>
+    <label>Password</label>
+    <input type="password" id="password" onkeydown="if(event.key==='Enter') login()">
+    <button onclick="login()">Log in</button>
+    <p class="msg error" id="login-msg"></p>
+  </div>
+
+  <div id="admin-view" style="display:none;">
+    <div class="top-actions">
+      <div>
+        <h1>Shop Notes Admin</h1>
+        <p class="sub">Write, edit, and publish posts for blog.primochops.com</p>
+      </div>
+      <button class="secondary" onclick="logout()">Log out</button>
+    </div>
+
+    <div id="list-view">
+      <div class="toolbar">
+        <input type="text" id="search" placeholder="Search posts…" oninput="loadPosts()">
+        <button onclick="newPost()">+ New post</button>
+      </div>
+      <div class="card" id="post-list"></div>
+    </div>
+
+    <div id="editor" class="card">
+      <h2 id="editor-heading">New post</h2>
+      <label>Title</label>
+      <input type="text" id="f-title" oninput="autoSlug()">
+      <div class="row">
+        <div>
+          <label>Slug (URL)</label>
+          <input type="text" id="f-slug">
+        </div>
+        <div>
+          <label>Category</label>
+          <input type="text" id="f-category" placeholder="Exhaust, Fabrication, Brakes…">
+        </div>
+      </div>
+      <label>Excerpt (shown in the post list &amp; search snippets)</label>
+      <textarea id="f-excerpt" style="min-height:70px;"></textarea>
+      <label>Body (HTML — use &lt;p&gt;, &lt;h2&gt;, &lt;ul&gt;/&lt;li&gt;, &lt;strong&gt;, &lt;a href="..."&gt;)</label>
+      <textarea id="f-body"></textarea>
+      <label><input type="checkbox" id="f-published" checked style="width:auto;display:inline;vertical-align:middle;"> Published (uncheck to save as a draft)</label>
+      <div>
+        <button onclick="savePost()">Save post</button>
+        <button class="secondary" onclick="closeEditor()">Cancel</button>
+        <button class="danger" id="delete-btn" style="display:none;" onclick="deletePost()">Delete</button>
+      </div>
+      <p class="msg" id="editor-msg"></p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let editingSlug = null;
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    ...opts,
+    headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || ('Request failed: ' + res.status));
+  return data;
+}
+
+async function checkSession() {
+  const { loggedIn } = await api('/api/me');
+  document.getElementById('login-view').style.display = loggedIn ? 'none' : 'block';
+  document.getElementById('admin-view').style.display = loggedIn ? 'block' : 'none';
+  if (loggedIn) loadPosts();
+}
+
+async function login() {
+  const password = document.getElementById('password').value;
+  const msg = document.getElementById('login-msg');
+  msg.textContent = '';
+  try {
+    await api('/api/login', { method: 'POST', body: JSON.stringify({ password }) });
+    checkSession();
+  } catch (e) {
+    msg.textContent = e.message;
+  }
+}
+
+async function logout() {
+  await api('/api/logout', { method: 'POST' });
+  checkSession();
+}
+
+async function loadPosts() {
+  const q = document.getElementById('search').value.trim();
+  const url = '/api/posts?all=1' + (q ? '&q=' + encodeURIComponent(q) : '');
+  const { posts } = await api(url);
+  const list = document.getElementById('post-list');
+  if (!posts.length) {
+    list.innerHTML = '<p class="sub">No posts found.</p>';
+    return;
+  }
+  list.innerHTML = posts.map(p => `
+    <div class="post-row">
+      <div>
+        <span class="title">${escapeHtml(p.title)}</span>
+        <span class="badge">${escapeHtml(p.category)}</span>
+        ${!p.published ? '<span class="badge draft">Draft</span>' : ''}
+        <div class="meta">${p.slug} · ${p.created_at}</div>
+      </div>
+      <div class="actions">
+        <button onclick="editPost('${p.slug}')">Edit</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function autoSlug() {
+  if (editingSlug) return; // don't auto-change slug once editing an existing post
+  const title = document.getElementById('f-title').value;
+  document.getElementById('f-slug').value = title
+    .toLowerCase().trim()
+    .replace(/['"]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function newPost() {
+  editingSlug = null;
+  document.getElementById('editor-heading').textContent = 'New post';
+  document.getElementById('f-title').value = '';
+  document.getElementById('f-slug').value = '';
+  document.getElementById('f-category').value = '';
+  document.getElementById('f-excerpt').value = '';
+  document.getElementById('f-body').value = '';
+  document.getElementById('f-published').checked = true;
+  document.getElementById('delete-btn').style.display = 'none';
+  document.getElementById('editor-msg').textContent = '';
+  document.getElementById('editor').style.display = 'block';
+  document.getElementById('list-view').style.display = 'none';
+}
+
+async function editPost(slug) {
+  const { post } = await api('/api/posts/' + encodeURIComponent(slug) + '?all=1');
+  editingSlug = slug;
+  document.getElementById('editor-heading').textContent = 'Edit post';
+  document.getElementById('f-title').value = post.title;
+  document.getElementById('f-slug').value = post.slug;
+  document.getElementById('f-category').value = post.category;
+  document.getElementById('f-excerpt').value = post.excerpt;
+  document.getElementById('f-body').value = post.body_html;
+  document.getElementById('f-published').checked = !!post.published;
+  document.getElementById('delete-btn').style.display = 'inline-block';
+  document.getElementById('editor-msg').textContent = '';
+  document.getElementById('editor').style.display = 'block';
+  document.getElementById('list-view').style.display = 'none';
+}
+
+function closeEditor() {
+  document.getElementById('editor').style.display = 'none';
+  document.getElementById('list-view').style.display = 'block';
+  editingSlug = null;
+}
+
+async function savePost() {
+  const payload = {
+    title: document.getElementById('f-title').value.trim(),
+    slug: document.getElementById('f-slug').value.trim(),
+    category: document.getElementById('f-category').value.trim() || 'General',
+    excerpt: document.getElementById('f-excerpt').value.trim(),
+    body_html: document.getElementById('f-body').value,
+    published: document.getElementById('f-published').checked,
+  };
+  const msg = document.getElementById('editor-msg');
+  msg.className = 'msg';
+  msg.textContent = 'Saving…';
+  try {
+    if (editingSlug) {
+      await api('/api/posts/' + encodeURIComponent(editingSlug), { method: 'PUT', body: JSON.stringify(payload) });
+    } else {
+      await api('/api/posts', { method: 'POST', body: JSON.stringify(payload) });
+    }
+    msg.className = 'msg ok';
+    msg.textContent = 'Saved.';
+    setTimeout(() => { closeEditor(); loadPosts(); }, 500);
+  } catch (e) {
+    msg.className = 'msg error';
+    msg.textContent = e.message;
+  }
+}
+
+async function deletePost() {
+  if (!editingSlug) return;
+  if (!confirm('Delete this post? This can\\'t be undone.')) return;
+  await api('/api/posts/' + encodeURIComponent(editingSlug), { method: 'DELETE' });
+  closeEditor();
+  loadPosts();
+}
+
+checkSession();
+</script>
+</body>
+</html>
