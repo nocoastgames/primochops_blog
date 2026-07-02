@@ -25,6 +25,30 @@
     font-family: inherit; font-size: 14px; background: #fff; color: var(--ink);
   }
   textarea { min-height: 240px; font-family: "SFMono-Regular", Consolas, monospace; font-size: 13px; }
+  .editor-toolbar {
+    display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+    background: #efe9d8; border: 1px solid #ccc; border-bottom: none;
+    border-radius: 5px 5px 0 0; padding: 6px;
+  }
+  .editor-toolbar button {
+    margin: 0; padding: 6px 10px; font-size: 13px; font-weight: 500;
+    background: #fff; color: var(--ink); border: 1px solid #ccc;
+  }
+  .editor-toolbar button:hover { background: #f0e6d0; }
+  .editor-toolbar .spacer { flex: 1; }
+  .editor-toolbar #html-toggle-btn { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .editor-visual {
+    min-height: 260px; max-height: 480px; overflow-y: auto;
+    border: 1px solid #ccc; border-top: none; border-radius: 0 0 5px 5px;
+    padding: 14px 16px; background: #fff; font-size: 15px; line-height: 1.6;
+  }
+  .editor-visual:focus { outline: 2px solid var(--rust); outline-offset: -1px; }
+  .editor-visual h2 { font-size: 1.15rem; margin: 18px 0 8px; }
+  .editor-visual p { margin: 0 0 12px; }
+  .editor-visual ul { margin: 0 0 12px; padding-left: 22px; }
+  .editor-visual a { color: var(--rust); }
+  .editor-visual .shop-note { background: #f4ecd8; border-radius: 4px; padding: 12px 14px; margin: 12px 0; }
+  .editor-visual .shop-note .label { display: block; font-weight: 700; font-size: 12px; color: var(--rust); margin-bottom: 4px; }
   .row { display: flex; gap: 16px; }
   .row > div { flex: 1; }
   button {
@@ -99,8 +123,20 @@
       </div>
       <label>Excerpt (shown in the post list &amp; search snippets)</label>
       <textarea id="f-excerpt" style="min-height:70px;"></textarea>
-      <label>Body (HTML — use &lt;p&gt;, &lt;h2&gt;, &lt;ul&gt;/&lt;li&gt;, &lt;strong&gt;, &lt;a href="..."&gt;)</label>
-      <textarea id="f-body"></textarea>
+      <label>Body</label>
+      <div class="editor-toolbar">
+        <button type="button" onmousedown="event.preventDefault()" onclick="fmt('formatBlock','P')" title="Paragraph">¶</button>
+        <button type="button" onmousedown="event.preventDefault()" onclick="fmt('formatBlock','H2')" title="Heading"><b>H2</b></button>
+        <button type="button" onmousedown="event.preventDefault()" onclick="fmt('bold')" title="Bold"><b>B</b></button>
+        <button type="button" onmousedown="event.preventDefault()" onclick="fmt('insertUnorderedList')" title="Bullet list">&bull; List</button>
+        <button type="button" onmousedown="event.preventDefault()" onclick="insertLink()" title="Link">Link</button>
+        <button type="button" onmousedown="event.preventDefault()" onclick="insertShopNote()" title="Insert shop-note callout box">+ Shop Note</button>
+        <span class="spacer"></span>
+        <button type="button" onclick="toggleHtmlView()" id="html-toggle-btn" title="Switch to raw HTML">HTML</button>
+      </div>
+      <div id="f-body-visual" class="editor-visual" contenteditable="true"></div>
+      <textarea id="f-body" style="display:none;"></textarea>
+      <p class="sub" style="margin-top:6px;">Use the toolbar for normal writing. Switch to HTML if you need something the toolbar doesn't cover.</p>
       <label><input type="checkbox" id="f-published" checked style="width:auto;display:inline;vertical-align:middle;"> Published (uncheck to save as a draft)</label>
       <div>
         <button onclick="savePost()">Save post</button>
@@ -115,6 +151,64 @@
 
 <script>
 let editingSlug = null;
+let htmlViewActive = false;
+
+function fmt(command, value) {
+  document.getElementById('f-body-visual').focus();
+  document.execCommand(command, false, value || null);
+}
+
+function insertLink() {
+  const url = prompt('Link URL (include https://):');
+  if (!url) return;
+  document.getElementById('f-body-visual').focus();
+  document.execCommand('createLink', false, url);
+}
+
+function insertShopNote() {
+  document.getElementById('f-body-visual').focus();
+  const html = '<div class="shop-note"><span class="label">From the bench</span>Type your note here.</div><p><br></p>';
+  document.execCommand('insertHTML', false, html);
+}
+
+function toggleHtmlView() {
+  const visual = document.getElementById('f-body-visual');
+  const textarea = document.getElementById('f-body');
+  const btn = document.getElementById('html-toggle-btn');
+  if (!htmlViewActive) {
+    textarea.value = visual.innerHTML.trim();
+    visual.style.display = 'none';
+    document.querySelector('.editor-toolbar').style.display = 'none';
+    textarea.style.display = 'block';
+    btn.textContent = 'Visual';
+    htmlViewActive = true;
+  } else {
+    visual.innerHTML = textarea.value;
+    textarea.style.display = 'none';
+    document.querySelector('.editor-toolbar').style.display = 'flex';
+    visual.style.display = 'block';
+    btn.textContent = 'HTML';
+    htmlViewActive = false;
+  }
+}
+
+function resetEditorView() {
+  htmlViewActive = false;
+  document.getElementById('f-body-visual').style.display = 'block';
+  document.getElementById('f-body').style.display = 'none';
+  document.querySelector('.editor-toolbar').style.display = 'flex';
+  document.getElementById('html-toggle-btn').textContent = 'HTML';
+}
+
+function getBodyHtml() {
+  if (htmlViewActive) return document.getElementById('f-body').value;
+  return document.getElementById('f-body-visual').innerHTML.trim();
+}
+
+function setBodyHtml(html) {
+  document.getElementById('f-body-visual').innerHTML = html || '';
+  document.getElementById('f-body').value = html || '';
+}
 
 async function api(path, opts = {}) {
   const res = await fetch(path, {
@@ -197,7 +291,8 @@ function newPost() {
   document.getElementById('f-slug').value = '';
   document.getElementById('f-category').value = '';
   document.getElementById('f-excerpt').value = '';
-  document.getElementById('f-body').value = '';
+  setBodyHtml('<p><br></p>');
+  resetEditorView();
   document.getElementById('f-published').checked = true;
   document.getElementById('delete-btn').style.display = 'none';
   document.getElementById('editor-msg').textContent = '';
@@ -213,7 +308,8 @@ async function editPost(slug) {
   document.getElementById('f-slug').value = post.slug;
   document.getElementById('f-category').value = post.category;
   document.getElementById('f-excerpt').value = post.excerpt;
-  document.getElementById('f-body').value = post.body_html;
+  setBodyHtml(post.body_html);
+  resetEditorView();
   document.getElementById('f-published').checked = !!post.published;
   document.getElementById('delete-btn').style.display = 'inline-block';
   document.getElementById('editor-msg').textContent = '';
@@ -233,7 +329,7 @@ async function savePost() {
     slug: document.getElementById('f-slug').value.trim(),
     category: document.getElementById('f-category').value.trim() || 'General',
     excerpt: document.getElementById('f-excerpt').value.trim(),
-    body_html: document.getElementById('f-body').value,
+    body_html: getBodyHtml(),
     published: document.getElementById('f-published').checked,
   };
   const msg = document.getElementById('editor-msg');
