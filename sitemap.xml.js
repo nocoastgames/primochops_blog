@@ -1,39 +1,35 @@
-// Shared helpers for functions/api/* routes.
-// Not a route itself — no onRequest export, so Pages won't treat this as a URL.
-
-export function getCookie(request, name) {
-  const header = request.headers.get('Cookie') || '';
-  const match = header.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
-  return match ? decodeURIComponent(match[1]) : null;
+function escapeXml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
-export function isLoggedIn(request, env) {
-  const session = getCookie(request, 'session');
-  return !!session && !!env.ADMIN_SESSION_SECRET && session === env.ADMIN_SESSION_SECRET;
-}
+export async function onRequestGet({ env }) {
+  const { results } = await env.DB.prepare(
+    `SELECT slug, title, excerpt, created_at
+     FROM posts WHERE published = 1 ORDER BY created_at DESC LIMIT 30`
+  ).all();
 
-export function requireAuth(request, env) {
-  if (!isLoggedIn(request, env)) {
-    return new Response(JSON.stringify({ error: 'Not authenticated' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-  return null;
-}
+  const items = results.map(p => `
+  <item>
+    <title>${escapeXml(p.title)}</title>
+    <link>https://blog.primochops.com/posts/${escapeXml(p.slug)}</link>
+    <guid>https://blog.primochops.com/posts/${escapeXml(p.slug)}</guid>
+    <description>${escapeXml(p.excerpt)}</description>
+    <pubDate>${new Date(p.created_at.replace(' ', 'T') + 'Z').toUTCString()}</pubDate>
+  </item>`).join('');
 
-export function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+  <title>Fab Tabs Shop Notes</title>
+  <link>https://blog.primochops.com/</link>
+  <description>Fitment guides, build notes, and fabrication know-how from Fab Tabs — garage-built chopper parts.</description>
+  <language>en-us</language>
+  ${items}
+</channel>
+</rss>`;
 
-export function slugify(title) {
-  return title
-    .toLowerCase()
-    .trim()
-    .replace(/['"]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+  return new Response(xml, { headers: { 'Content-Type': 'application/rss+xml;charset=UTF-8' } });
 }

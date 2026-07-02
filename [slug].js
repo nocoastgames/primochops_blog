@@ -1,60 +1,39 @@
-// Shared page shell so the homepage, post pages, etc. all render with
-// identical head tags, header, and footer. Not a route — no onRequest export.
+// Shared helpers for functions/api/* routes.
+// Not a route itself — no onRequest export, so Pages won't treat this as a URL.
 
-export function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+export function getCookie(request, name) {
+  const header = request.headers.get('Cookie') || '';
+  const match = header.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+  return match ? decodeURIComponent(match[1]) : null;
 }
 
-export function formatDate(iso) {
-  const d = new Date(iso.replace(' ', 'T') + 'Z');
-  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+export function isLoggedIn(request, env) {
+  const session = getCookie(request, 'session');
+  return !!session && !!env.ADMIN_SESSION_SECRET && session === env.ADMIN_SESSION_SECRET;
 }
 
-const HEAD = (title, description) => `
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${escapeHtml(title)}</title>
-<meta name="description" content="${escapeHtml(description)}">
-<link rel="alternate" type="application/rss+xml" title="Fab Tabs Shop Notes" href="/rss.xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Public+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css">
-`;
+export function requireAuth(request, env) {
+  if (!isLoggedIn(request, env)) {
+    return new Response(JSON.stringify({ error: 'Not authenticated' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  return null;
+}
 
-const HEADER = `
-<header class="site-header">
-  <div class="kicker">Fab Tabs / primochops.com</div>
-  <h1 class="site-title"><a href="/">Shop Notes</a></h1>
-  <p class="site-tagline">Fitment guides, build notes, and fabrication know-how for garage-built choppers — straight from the bench.</p>
-  <nav class="site-nav">
-    <a href="https://www.primochops.com">← Back to the shop</a>
-    <a href="/rss.xml">RSS</a>
-  </nav>
-</header>
-`;
+export function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
 
-const FOOTER = `
-<footer class="site-footer">
-  <p>Fab Tabs — garage-built chopper parts. <a href="https://www.primochops.com">primochops.com</a></p>
-</footer>
-`;
-
-export function renderPage({ title, description, header = true, bodyHtml }) {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>${HEAD(title, description)}</head>
-<body>
-<div class="wrap">
-${header ? HEADER : ''}
-<main>
-${bodyHtml}
-</main>
-${FOOTER}
-</div>
-</body>
-</html>`;
+export function slugify(title) {
+  return title
+    .toLowerCase()
+    .trim()
+    .replace(/['"]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
